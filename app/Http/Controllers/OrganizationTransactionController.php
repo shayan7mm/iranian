@@ -70,7 +70,7 @@ class OrganizationTransactionController extends Controller
 
         if ($request->hasFile('receipt_image')) {
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $data['receipt_image'] = 'uploads/receipts/' . $filename;
         }
@@ -117,7 +117,7 @@ class OrganizationTransactionController extends Controller
             }
             
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $data['receipt_image'] = 'uploads/receipts/' . $filename;
         }

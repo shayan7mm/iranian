@@ -170,7 +170,7 @@ class HouseRentController extends Controller
         // آپلود تصویر
         if ($request->hasFile('receipt_image')) {
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $transactionData['receipt_image'] = 'uploads/receipts/' . $filename;
         }
