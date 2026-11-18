@@ -20,7 +20,7 @@ class PersonController extends Controller
         if (!$user->isMaster()) {
             $personIds = $user->getPersonIds('persons');
             if (empty($personIds)) {
-                return view('persons.index', ['persons' => collect([]), 'status' => $status, 'search' => $search]);
+                return view('persons.index', ['persons' => Person::whereIn('id', [])->paginate(20), 'status' => $status, 'search' => $search]);
             }
             $query->whereIn('id', $personIds);
         }
@@ -43,12 +43,14 @@ class PersonController extends Controller
     // ===== فرم ثبت شخص جدید =====
     public function create()
     {
+        $this->ensureModuleAccess();
         return view('persons.create');
     }
 
     // ===== ذخیره شخص جدید =====
     public function store(Request $request)
     {
+        $this->ensureModuleAccess();
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -123,6 +125,14 @@ class PersonController extends Controller
         $user = Auth::user();
         if (!$user->isMaster() && !$user->canAccessPerson($person->id)) {
             abort(403, 'شما دسترسی به این شخص را ندارید.');
+        }
+    }
+
+    // ===== بررسی دسترسی به ماژول (بدون دسترسی، امکان ثبت مورد جدید نیست) =====
+    private function ensureModuleAccess(): void
+    {
+        if (! Auth::user()->hasModuleAccess('persons')) {
+            abort(403, 'شما به این بخش دسترسی ندارید.');
         }
     }
 }

@@ -50,11 +50,12 @@ class PermissionController extends Controller
         $permissions = $user->permissions;
         $modules = $this->getModules();
 
+        // همه آیتم‌های هر ماژول برای انتخاب دسترسی جداگانه
         $items = [
-            'cars' => Car::where('user_id', $user->id)->orWhere('user_id', Auth::id())->get(['id', 'name']),
-            'houses' => House::where('user_id', $user->id)->orWhere('user_id', Auth::id())->get(['id', 'name']),
-            'persons' => Person::where('user_id', $user->id)->orWhere('user_id', Auth::id())->get(['id', 'name']),
-            'organizations' => Organization::where('user_id', $user->id)->orWhere('user_id', Auth::id())->get(['id', 'name']),
+            'cars' => Car::orderBy('name')->get(['id', 'name']),
+            'houses' => House::orderBy('name')->get(['id', 'name']),
+            'persons' => Person::orderBy('name')->get(['id', 'name']),
+            'organizations' => Organization::orderBy('name')->get(['id', 'name']),
             'expenses' => collect([]),
         ];
 

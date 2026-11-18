@@ -12,7 +12,7 @@
         <form method="POST" action="{{ route('cars.transactions.update', [$car, $transaction]) }}" enctype="multipart/form-data" class="card-body">
             @csrf
             @method('PUT')
-            @include('partials.ledger.transaction-form', ['transaction' => $transaction, 'dateField' => view('cars.transactions._legacy-date-field', ['transaction' => $transaction])->render()])
+            @include('partials.ledger.transaction-form', ['transaction' => $transaction])
             <div class="form-actions">
                 <a href="{{ route('cars.transactions.index', $car) }}" class="btn btn-ghost">انصراف</a>
                 <button type="submit" class="btn btn-primary"><x-icon name="check" /> ذخیره تغییرات</button>

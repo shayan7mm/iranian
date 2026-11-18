@@ -1,6 +1,6 @@
 {{--
     فرم تراکنش (ثبت و ویرایش) — مشترک بین اشخاص، ارگان‌ها، املاک و خودروها
-    پارامترها: $transaction (برای ویرایش، وگرنه null), $dateField (اختیاری: HTML جایگزین فیلد تاریخ)
+    پارامترها: $transaction (برای ویرایش، وگرنه null)
                $withTitle (اختیاری: فیلد عنوان برای درآمد/هزینه), $incomeLabel, $expenseLabel
 --}}
 @php
@@ -39,16 +39,12 @@
         @error('amount') <span class="field-error">{{ $message }}</span> @enderror
     </div>
 
-    @isset($dateField)
-        {!! $dateField !!}
-    @else
-        <div class="field">
-            <label for="transaction_date">{{ ! empty($withTitle) ? 'تاریخ' : 'تاریخ تراکنش' }} <span class="req">*</span></label>
-            <input type="text" id="transaction_date" name="transaction_date" value="{{ $dateValue }}" placeholder="1404/06/25" dir="ltr" required>
-            <span class="hint">فرمت شمسی: 1404/06/25</span>
-            @error('transaction_date') <span class="field-error">{{ $message }}</span> @enderror
-        </div>
-    @endisset
+    <div class="field">
+        <label for="transaction_date">{{ ! empty($withTitle) ? 'تاریخ' : 'تاریخ تراکنش' }} <span class="req">*</span></label>
+        <input type="text" id="transaction_date" name="transaction_date" value="{{ $dateValue }}" placeholder="1404/06/25" dir="ltr" required>
+        <span class="hint">فرمت شمسی: 1404/06/25</span>
+        @error('transaction_date') <span class="field-error">{{ $message }}</span> @enderror
+    </div>
 
     <div class="field">
         <label for="from_account">شماره کارت / حساب مبدأ</label>

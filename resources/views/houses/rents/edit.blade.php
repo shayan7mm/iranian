@@ -8,7 +8,7 @@
 @endsection
 
 @section('content')
-    <div class="alert alert-warn"><x-icon name="alert" /> <div>توجه: با ذخیره این فرم، همه اقساط از نو ساخته می‌شوند و وضعیت «پرداخت شده» اقساط قبلی پاک می‌شود.</div></div>
+    <div class="alert alert-info"><x-icon name="info" /> <div>با ذخیره، اقساط پرداخت‌نشده بر اساس مبلغ و تاریخ جدید از نو ساخته می‌شوند. اقساط پرداخت‌شده و تراکنش‌هایشان حفظ می‌شوند.</div></div>
     <div class="card" style="max-width:820px">
         <form method="POST" action="{{ route('houses.rents.update', [$house, $rent]) }}" class="card-body">
             @csrf

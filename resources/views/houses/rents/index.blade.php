@@ -18,7 +18,7 @@
         'route' => 'houses.rents',
         'owner' => $house,
         'isLoan' => false,
-        'canCancel' => false,
+        'canCancel' => true,
         'emptyText' => 'هیچ اجاره‌ای برای این ملک ثبت نشده است',
     ])
 

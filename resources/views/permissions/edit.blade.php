@@ -42,11 +42,7 @@
                     $access = $permission ? $permission->access : false;
                     $itemIds = $permission ? $permission->item_ids : [];
 
-                    // آیتم‌های این ماژول (برای نمایش) — رفتار قبلی حفظ شده است
-                    $items = [];
-                    if ($moduleKey === 'cars') {
-                        $items = \App\Models\Car::where('user_id', auth()->id())->get(['id', 'name']);
-                    }
+                    $moduleItems = $items[$moduleKey] ?? collect();
                 @endphp
                 <div class="perm-row">
                     <div class="perm-head">
@@ -72,15 +68,15 @@
                             دسترسی به همه آیتم‌ها
                         </label>
                         <div class="items-grid" id="items_grid_{{ $moduleKey }}">
-                            @forelse ($items as $item)
+                            @forelse ($moduleItems as $item)
                                 <label>
                                     <input type="checkbox" name="permissions[{{ $moduleKey }}][item_ids][]" value="{{ $item->id }}"
-                                        {{ in_array($item->id, $itemIds ?? []) ? 'checked' : '' }}
+                                        {{ in_array($item->id, (array) ($itemIds ?? [])) ? 'checked' : '' }}
                                         {{ $itemIds === null ? 'disabled' : '' }}>
                                     {{ $item->name }}
                                 </label>
                             @empty
-                                <span class="hint">هیچ آیتمی برای انتخاب جداگانه در این ماژول وجود ندارد.</span>
+                                <span class="hint">{{ $moduleKey === 'expenses' ? 'این بخش آیتم جداگانه ندارد؛ هر حسابدار فقط ثبت‌های خودش را می‌بیند.' : 'هنوز آیتمی در این بخش ثبت نشده است.' }}</span>
                             @endforelse
                         </div>
                     </div>

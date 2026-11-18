@@ -9,6 +9,7 @@ use App\Models\House;
 use App\Models\Organization;
 use App\Models\Permission;
 use App\Models\Person;
+use App\Models\HouseRent;
 use App\Models\Todo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -160,5 +161,102 @@ class IranianPanelTest extends TestCase
 
         $this->post('/login', ['login' => $acc->email, 'password' => 'password'])->assertStatus(429);
         $this->assertGuest();
+    }
+
+    public function test_car_edit_and_car_transaction_edit_work(): void
+    {
+        $master = $this->master();
+        $d = $this->seedData($master);
+        $this->actingAs($master);
+
+        $this->get(route('cars.edit', $d['car']))->assertOk()->assertSee('ویرایش خودرو');
+        $this->put(route('cars.update', $d['car']), ['name' => 'پراید نقره‌ای', 'owner_name' => 'علی', 'owner_phone' => '0912', 'status' => 'active'])->assertRedirect();
+        $this->assertSame('پراید نقره‌ای', $d['car']->fresh()->name);
+
+        $this->get(route('cars.transactions.edit', [$d['car'], $d['tx']]))->assertOk()->assertSee('1404/06/25');
+        $this->put(route('cars.transactions.update', [$d['car'], $d['tx']]), ['type' => 'expense', 'amount' => 2000, 'transaction_date' => '1404/07/01'])->assertRedirect();
+        $this->assertSame('1404/07/01', $d['tx']->fresh()->transaction_date);
+    }
+
+    public function test_accountant_without_access_sees_empty_lists_and_cannot_create(): void
+    {
+        $this->seedData($this->master());
+        $acc = $this->accountant();
+        $this->actingAs($acc);
+
+        foreach (['cars', 'houses', 'persons', 'organizations'] as $module) {
+            $this->get(route($module . '.index'))->assertOk();
+            $this->get(route($module . '.create'))->assertForbidden();
+        }
+        $this->post(route('cars.store'), ['name' => 'x', 'owner_name' => 'y', 'owner_phone' => '1'])->assertForbidden();
+        $this->get(route('expenses.index'))->assertForbidden();
+
+        Permission::create(['user_id' => $acc->id, 'module' => 'cars', 'access' => true, 'item_ids' => null]);
+        $this->get(route('cars.create'))->assertOk();
+    }
+
+    public function test_rent_update_keeps_paid_installments_and_rent_payment_can_be_cancelled(): void
+    {
+        $master = $this->master();
+        $d = $this->seedData($master);
+        $this->actingAs($master);
+
+        $this->post(route('houses.rents.store', $d['house']), ['type' => 'rent_out', 'monthly_amount' => 1000, 'start_date' => '1404/01/01', 'total_months' => 3]);
+        $rent = HouseRent::first();
+        $first = $rent->installments()->where('installment_number', 1)->first();
+        $this->post(route('houses.rents.pay-installment', [$d['house'], $rent, $first]), ['paid_date' => '1404/01/02']);
+        $this->assertTrue($first->fresh()->is_paid);
+
+        // تغییر مبلغ و مدت: قسط پرداخت‌شده باید بماند
+        $this->put(route('houses.rents.update', [$d['house'], $rent]), ['type' => 'rent_out', 'monthly_amount' => 2000, 'start_date' => '1404/01/01', 'total_months' => 5])->assertRedirect();
+        $rent->refresh();
+        $this->assertSame(5, $rent->installments()->count());
+        $this->assertTrue($rent->installments()->where('installment_number', 1)->first()->is_paid);
+        $this->assertEquals(2000, $rent->installments()->where('installment_number', 2)->first()->amount);
+
+        // کم کردن مدت به کمتر از قسط پرداخت‌شده مجاز نیست
+        $this->post(route('houses.rents.pay-installment', [$d['house'], $rent, $rent->installments()->where('installment_number', 4)->first()]), ['paid_date' => '1404/04/02']);
+        $this->put(route('houses.rents.update', [$d['house'], $rent]), ['type' => 'rent_out', 'monthly_amount' => 2000, 'start_date' => '1404/01/01', 'total_months' => 2])->assertSessionHasErrors('total_months');
+
+        // لغو پرداخت قسط اجاره از صفحه اجاره‌ها
+        $paid = $rent->installments()->where('installment_number', 1)->first();
+        $this->get(route('houses.rents.index', $d['house']))->assertSee(route('houses.rents.cancel-installment', [$d['house'], $rent, $paid]), false);
+        $this->post(route('houses.rents.cancel-installment', [$d['house'], $rent, $paid]))->assertRedirect();
+        $this->assertFalse($paid->fresh()->is_paid);
+    }
+
+    public function test_permission_editor_lists_items_of_every_module(): void
+    {
+        $master = $this->master();
+        $this->seedData($master);
+        $acc = $this->accountant();
+
+        $this->actingAs($master)->get(route('permissions.edit', $acc))
+            ->assertOk()->assertSee('پراید')->assertSee('آپارتمان')->assertSee('حسن')->assertSee('بانک ملی');
+    }
+
+    public function test_todo_accepts_persian_due_date(): void
+    {
+        $this->actingAs($this->master())
+            ->post(route('master.todos.store'), ['title' => 'چک', 'due_date' => '1404/06/25'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('todos', ['title' => 'چک', 'due_date' => '1404/06/25']);
+    }
+
+    public function test_create_master_command(): void
+    {
+        $this->artisan('app:create-master')
+            ->expectsQuestion('ایمیل مدیر', 'boss@example.com')
+            ->expectsQuestion('نام و نام خانوادگی', 'مدیر')
+            ->expectsQuestion('شماره موبایل (برای ورود با موبایل)', '09125555555')
+            ->expectsQuestion('رمز عبور (حداقل ۸ کاراکتر)', 'Secret123')
+            ->expectsQuestion('تکرار رمز عبور', 'Secret123')
+            ->assertSuccessful();
+
+        $user = User::firstWhere('email', 'boss@example.com');
+        $this->assertTrue($user->isMaster());
+
+        $this->post('/login', ['login' => '09125555555', 'password' => 'Secret123'])->assertRedirect(route('dashboard', absolute: false));
     }
 }

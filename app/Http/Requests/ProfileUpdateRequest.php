@@ -16,6 +16,13 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        // حسابدار فقط نام را ویرایش می‌کند (ایمیل و موبایل در فرم او غیرفعال است)
+        if (! $this->user()->isMaster()) {
+            return [
+                'name' => ['required', 'string', 'max:255'],
+            ];
+        }
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -24,6 +31,12 @@ class ProfileUpdateRequest extends FormRequest
                 'lowercase',
                 'email',
                 'max:255',
+                Rule::unique(User::class)->ignore($this->user()->id),
+            ],
+            'phone' => [
+                'required',
+                'string',
+                'max:20',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
         ];

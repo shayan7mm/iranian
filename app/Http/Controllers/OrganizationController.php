@@ -49,12 +49,14 @@ class OrganizationController extends Controller
     // ===== فرم ثبت ارگان جدید =====
     public function create()
     {
+        $this->ensureModuleAccess();
         return view('organizations.create');
     }
 
     // ===== ذخیره ارگان جدید =====
     public function store(Request $request)
     {
+        $this->ensureModuleAccess();
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -142,6 +144,14 @@ class OrganizationController extends Controller
         $user = Auth::user();
         if (!$user->isMaster() && !$user->canAccessOrganization($organization->id)) {
             abort(403, 'شما دسترسی به این ارگان را ندارید.');
+        }
+    }
+
+    // ===== بررسی دسترسی به ماژول (بدون دسترسی، امکان ثبت مورد جدید نیست) =====
+    private function ensureModuleAccess(): void
+    {
+        if (! Auth::user()->hasModuleAccess('organizations')) {
+            abort(403, 'شما به این بخش دسترسی ندارید.');
         }
     }
 }
