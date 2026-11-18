@@ -1,142 +1,62 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ویرایش حسابدار</title>
-    <link rel="stylesheet" href="{{ asset('css/Style.css') }}">
-    <style>
-        .status-toggle {
-            display: flex;
-            gap: 12px;
-            background: #f3f4f6;
-            padding: 6px;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-        }
+@extends('layouts.panel')
 
-        .status-toggle label {
-            flex: 1;
-            text-align: center;
-            padding: 10px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 15px;
-            color: #6b7280;
-            font-weight: 500;
-        }
+@section('title', 'ویرایش حسابدار')
+@section('heading', 'ویرایش حسابدار')
+@section('subheading', $user->name)
+@section('crumbs')
+    <a href="{{ route('dashboard') }}">داشبورد</a> / <a href="{{ route('master.users') }}">کاربران</a> / <span>ویرایش</span>
+@endsection
 
-        .status-toggle input[type="radio"] {
-            display: none;
-        }
+@section('actions')
+    <a href="{{ route('permissions.index', $user) }}" class="btn btn-warn"><x-icon name="key" /> دسترسی‌ها</a>
+@endsection
 
-        .status-toggle input[type="radio"][value="1"]:checked + label {
-            background: rgba(16, 185, 129, 0.10);
-            color: #059669;
-        }
-
-        .status-toggle input[type="radio"][value="0"]:checked + label {
-            background: rgba(239, 68, 68, 0.06);
-            color: #dc2626;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="bg-wrapper"></div>
-
-    <div class="container">
-
-        <header class="header">
-            <div class="header-left">
-                <div class="logo-box">حس</div>
-                <div>
-                    <h1>ویرایش حسابدار</h1>
-                    <div class="subtitle">{{ $user->name }}</div>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="user-badge">
-                    <div class="avatar">{{ substr(auth()->user()->name, 0, 1) }}</div>
-                    <div class="user-meta">
-                        <div class="name">{{ auth()->user()->name }}</div>
-                        <div class="role">مدیر ارشد</div>
-                    </div>
-                </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="btn-logout">خروج از حساب</button>
-                </form>
-            </div>
-        </header>
-
-        <a href="{{ route('master.users') }}" class="back-link">بازگشت به لیست حسابداران</a>
-
-        <div class="form-card">
-            <form method="POST" action="{{ route('master.users.update', $user) }}">
-                @csrf
-                @method('PUT')
-
-                <div class="form-group">
-                    <label for="name">نام کامل</label>
+@section('content')
+    <div class="card" style="max-width:760px">
+        <form method="POST" action="{{ route('master.users.update', $user) }}" class="card-body">
+            @csrf
+            @method('PUT')
+            <div class="form-grid">
+                <div class="field full">
+                    <label for="name">نام کامل <span class="req">*</span></label>
                     <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required>
-                    @error('name')
-                        <span class="error">{{ $message }}</span>
-                    @enderror
+                    @error('name') <span class="field-error">{{ $message }}</span> @enderror
                 </div>
-
-                <div class="form-group">
-                    <label for="email">ایمیل</label>
-                    <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required>
-                    @error('email')
-                        <span class="error">{{ $message }}</span>
-                    @enderror
+                <div class="field">
+                    <label for="email">ایمیل <span class="req">*</span></label>
+                    <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" dir="ltr" required>
+                    @error('email') <span class="field-error">{{ $message }}</span> @enderror
                 </div>
-
-                <div class="form-group">
-                    <label for="phone">شماره موبایل</label>
+                <div class="field">
+                    <label for="phone">شماره موبایل <span class="req">*</span></label>
                     <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" dir="ltr" required>
-                    @error('phone')
-                        <span class="error">{{ $message }}</span>
-                    @enderror
+                    @error('phone') <span class="field-error">{{ $message }}</span> @enderror
                 </div>
-
-                <div class="form-group">
-                    <label>وضعیت حساب</label>
-                    <div class="status-toggle">
-                        <input type="radio" id="active_yes" name="is_active" value="1" {{ $user->is_active ? 'checked' : '' }}>
-                        <label for="active_yes">فعال</label>
-                        <input type="radio" id="active_no" name="is_active" value="0" {{ !$user->is_active ? 'checked' : '' }}>
-                        <label for="active_no">غیرفعال</label>
+                <div class="field full">
+                    <span class="label">وضعیت حساب</span>
+                    @php($active = (string) old('is_active', $user->is_active ? '1' : '0'))
+                    <div class="segmented">
+                        <label class="income"><input type="radio" name="is_active" value="1" @checked($active === '1')> <x-icon name="check" /> فعال</label>
+                        <label class="expense"><input type="radio" name="is_active" value="0" @checked($active === '0')> <x-icon name="x" /> غیرفعال</label>
                     </div>
-                    @error('is_active')
-                        <span class="error">{{ $message }}</span>
-                    @enderror
+                    @error('is_active') <span class="field-error">{{ $message }}</span> @enderror
                 </div>
-
-                <div class="form-group">
-                    <label for="password">رمز عبور جدید <span style="color:#6b7280; font-weight:400;">(اختیاری)</span></label>
-                    <input type="password" id="password" name="password" placeholder="برای تغییر رمز عبور پر کنید">
-                    <div class="help-text">برای تغییر رمز عبور، این بخش را پر کنید. در غیر این صورت خالی بگذارید.</div>
-                    @error('password')
-                        <span class="error">{{ $message }}</span>
-                    @enderror
+                <div class="form-section"><x-icon name="key" /> تغییر رمز عبور (اختیاری)</div>
+                <div class="field">
+                    <label for="password">رمز عبور جدید</label>
+                    <input type="password" id="password" name="password" placeholder="برای تغییر رمز پر کنید" autocomplete="new-password">
+                    <span class="hint">در غیر این صورت خالی بگذارید.</span>
+                    @error('password') <span class="field-error">{{ $message }}</span> @enderror
                 </div>
-
-                <div class="form-group">
+                <div class="field">
                     <label for="password_confirmation">تکرار رمز عبور جدید</label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" placeholder="تکرار رمز عبور جدید">
+                    <input type="password" id="password_confirmation" name="password_confirmation" placeholder="تکرار رمز عبور جدید" autocomplete="new-password">
                 </div>
-
-                <div class="form-actions">
-                    <a href="{{ route('master.users') }}" class="btn-cancel">بازگشت</a>
-                    <button type="submit" class="btn-submit">ذخیره تغییرات</button>
-                </div>
-            </form>
-        </div>
-
+            </div>
+            <div class="form-actions">
+                <a href="{{ route('master.users') }}" class="btn btn-ghost">انصراف</a>
+                <button type="submit" class="btn btn-primary"><x-icon name="check" /> ذخیره تغییرات</button>
+            </div>
+        </form>
     </div>
-
-</body>
-</html>
+@endsection

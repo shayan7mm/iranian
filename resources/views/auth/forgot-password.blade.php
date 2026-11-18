@@ -1,25 +1,20 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
+<x-guest-layout title="فراموشی رمز عبور">
+    <h1>فراموشی رمز عبور</h1>
+    <p class="lead">ایمیل حساب خود را وارد کنید تا لینک تعیین رمز جدید برایتان ارسال شود.</p>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <div class="alert alert-success"><x-icon name="check" /> <div>{{ session('status') }}</div></div>
+    @endif
 
     <form method="POST" action="{{ route('password.email') }}">
         @csrf
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="field">
+            <label for="email">ایمیل</label>
+            <input id="email" type="email" name="email" value="{{ old('email') }}" dir="ltr" required autofocus>
+            @foreach ($errors->get('email') as $message) <span class="field-error">{{ $message }}</span> @endforeach
         </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
+        <button type="submit" class="btn btn-primary btn-block"><x-icon name="mail" /> ارسال لینک بازیابی رمز</button>
     </form>
+
+    <div class="auth-links"><a href="{{ route('login') }}">بازگشت به ورود</a></div>
 </x-guest-layout>

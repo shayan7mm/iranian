@@ -26,17 +26,9 @@ use Illuminate\Support\Facades\Route;
  Route::get('/', [HomeController::class, 'user'])->name('user');
 
 // ============================================
-// خروج از سیستم (GET و POST)
+// خروج از سیستم: فقط POST (مسیر logout در routes/auth.php)
+// خروج با GET حذف شد تا لینک‌های مخرب در سایت‌های دیگر نتوانند کاربر را خارج کنند.
 // ============================================
-Route::get('/logout', function () {
-    Auth::logout();
-    return redirect('/');
-})->name('logout');
-
-Route::post('/logout', function () {
-    Auth::logout();
-    return redirect('/');
-})->name('logout.post');
 
 // ============================================
 // مسیرهای احراز هویت (Breeze)
@@ -46,7 +38,7 @@ require __DIR__.'/auth.php';
 // ============================================
 // مسیرهای محافظت شده با احراز هویت
 // ============================================
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'active'])->group(function () {
     
     // ===== داشبورد =====
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -73,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
     });
 
-   Route::middleware(['auth', 'role:master'])->prefix('permissions')->name('permissions.')->group(function () {
+   Route::middleware(['auth', 'active', 'role:master'])->prefix('permissions')->name('permissions.')->group(function () {
     Route::get('/user/{user}', [PermissionController::class, 'index'])->name('index');
     Route::get('/user/{user}/edit', [PermissionController::class, 'edit'])->name('edit');
     Route::put('/user/{user}', [PermissionController::class, 'update'])->name('update');
@@ -88,7 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/cars/{car}/toggle-status', [CarController::class, 'toggleStatus'])->name('cars.toggle-status');
 
     // ===== مدیریت تراکنش‌های ماشین =====
-    Route::prefix('cars/{car}')->name('cars.')->group(function () {
+    Route::prefix('cars/{car}')->scopeBindings()->name('cars.')->group(function () {
         Route::get('/transactions', [CarTransactionController::class, 'index'])->name('transactions.index');
         Route::get('/transactions/create', [CarTransactionController::class, 'create'])->name('transactions.create');
         Route::post('/transactions', [CarTransactionController::class, 'store'])->name('transactions.store');
@@ -106,7 +98,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/houses/{house}/toggle-status', [HouseController::class, 'toggleStatus'])->name('houses.toggle-status');
 
     // ===== مدیریت تراکنش‌های منازل =====
-    Route::prefix('houses/{house}')->name('houses.')->group(function () {
+    Route::prefix('houses/{house}')->scopeBindings()->name('houses.')->group(function () {
         Route::get('/transactions', [HouseTransactionController::class, 'index'])->name('transactions.index');
         Route::get('/transactions/create', [HouseTransactionController::class, 'create'])->name('transactions.create');
         Route::post('/transactions', [HouseTransactionController::class, 'store'])->name('transactions.store');
@@ -116,7 +108,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ===== مدیریت اجاره منازل =====
-    Route::prefix('houses/{house}')->name('houses.')->group(function () {
+    Route::prefix('houses/{house}')->scopeBindings()->name('houses.')->group(function () {
         Route::get('/rents', [HouseRentController::class, 'index'])->name('rents.index');
         Route::get('/rents/create', [HouseRentController::class, 'create'])->name('rents.create');
         Route::post('/rents', [HouseRentController::class, 'store'])->name('rents.store');
@@ -135,7 +127,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/persons/{person}/toggle-status', [PersonController::class, 'toggleStatus'])->name('persons.toggle-status');
 
     // ===== مدیریت تراکنش‌های اشخاص =====
-    Route::prefix('persons/{person}')->name('persons.')->group(function () {
+    Route::prefix('persons/{person}')->scopeBindings()->name('persons.')->group(function () {
         Route::get('/transactions', [PersonTransactionController::class, 'index'])->name('transactions.index');
         Route::get('/transactions/create', [PersonTransactionController::class, 'create'])->name('transactions.create');
         Route::post('/transactions', [PersonTransactionController::class, 'store'])->name('transactions.store');
@@ -152,7 +144,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/organizations/{organization}/toggle-status', [OrganizationController::class, 'toggleStatus'])->name('organizations.toggle-status');
 
     // ===== مدیریت تراکنش‌های ارگان‌ها =====
-    Route::prefix('organizations/{organization}')->name('organizations.')->group(function () {
+    Route::prefix('organizations/{organization}')->scopeBindings()->name('organizations.')->group(function () {
         Route::get('/transactions', [OrganizationTransactionController::class, 'index'])->name('transactions.index');
         Route::get('/transactions/create', [OrganizationTransactionController::class, 'create'])->name('transactions.create');
         Route::post('/transactions', [OrganizationTransactionController::class, 'store'])->name('transactions.store');
@@ -162,7 +154,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // ===== مدیریت وام‌های ارگان‌ها =====
-    Route::prefix('organizations/{organization}')->name('organizations.')->group(function () {
+    Route::prefix('organizations/{organization}')->scopeBindings()->name('organizations.')->group(function () {
         Route::get('/loans', [OrganizationLoanController::class, 'index'])->name('loans.index');
         Route::get('/loans/create', [OrganizationLoanController::class, 'create'])->name('loans.create');
         Route::post('/loans', [OrganizationLoanController::class, 'store'])->name('loans.store');
@@ -185,7 +177,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
  // ==========================================
 // 📋 مدیریت To-Do List (فقط مستر)
 // ==========================================
-Route::middleware(['auth', 'role:master'])->prefix('master/todos')->name('master.todos.')->group(function () {
+Route::middleware(['auth', 'active', 'role:master'])->prefix('master/todos')->name('master.todos.')->group(function () {
     Route::get('/', [TodoController::class, 'index'])->name('index');
     Route::get('/create', [TodoController::class, 'create'])->name('create');
     Route::post('/', [TodoController::class, 'store'])->name('store');

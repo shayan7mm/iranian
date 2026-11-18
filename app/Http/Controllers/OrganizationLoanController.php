@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\OrganizationLoan;
 use App\Models\OrganizationLoanInstallment;
 use App\Models\OrganizationTransaction;
+use App\Support\InstallmentSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Hekmatinasser\Verta\Verta;
@@ -98,6 +99,14 @@ class OrganizationLoanController extends Controller
             'status' => 'nullable|in:active,completed,cancelled',
         ]);
 
+        // مدت قرارداد نباید از آخرین قسط پرداخت‌شده کمتر شود
+        $lastPaid = InstallmentSchedule::lastPaidNumber($loan);
+        if ($request->total_months < $lastPaid) {
+            return back()->withInput()->withErrors([
+                'total_months' => "قسط شماره {$lastPaid} پرداخت شده است؛ تعداد ماه‌ها نمی‌تواند کمتر از {$lastPaid} باشد.",
+            ]);
+        }
+
         $startDate = Verta::parseFormat('Y/m/d', $request->start_date);
         $endDate = $startDate->addMonths($request->total_months - 1);
 
@@ -111,8 +120,8 @@ class OrganizationLoanController extends Controller
             'status' => $request->status ?? $loan->status,
         ]);
 
-        $loan->installments()->delete();
-        $this->generateInstallments($loan);
+        // بازسازی اقساط پرداخت‌نشده؛ اقساط پرداخت‌شده حفظ می‌شوند
+        InstallmentSchedule::sync($loan);
 
         return redirect()->route('organizations.loans.index', $organization)
                         ->with('success', 'تسهیلات با موفقیت ویرایش شد.');
@@ -158,7 +167,7 @@ class OrganizationLoanController extends Controller
 
         if ($request->hasFile('receipt_image')) {
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $transactionData['receipt_image'] = 'uploads/receipts/' . $filename;
         }

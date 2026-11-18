@@ -6,6 +6,7 @@ use App\Models\House;
 use App\Models\HouseRent;
 use App\Models\HouseRentInstallment;
 use App\Models\HouseTransaction;
+use App\Support\InstallmentSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Hekmatinasser\Verta\Verta;
@@ -105,6 +106,14 @@ class HouseRentController extends Controller
         ]);
 
         // محاسبه تاریخ پایان
+        // مدت قرارداد نباید از آخرین قسط پرداخت‌شده کمتر شود
+        $lastPaid = InstallmentSchedule::lastPaidNumber($rent);
+        if ($request->total_months < $lastPaid) {
+            return back()->withInput()->withErrors([
+                'total_months' => "قسط شماره {$lastPaid} پرداخت شده است؛ تعداد ماه‌ها نمی‌تواند کمتر از {$lastPaid} باشد.",
+            ]);
+        }
+
         $startDate = Verta::parseFormat('Y/m/d', $request->start_date);
         $endDate = $startDate->addMonths($request->total_months - 1);
 
@@ -116,10 +125,8 @@ class HouseRentController extends Controller
             'total_months' => $request->total_months,
             'status' => $request->status ?? $rent->status,
         ]);
-
-        // حذف اقساط قبلی و تولید مجدد
-        $rent->installments()->delete();
-        $this->generateInstallments($rent);
+        // بازسازی اقساط پرداخت‌نشده؛ اقساط پرداخت‌شده حفظ می‌شوند
+        InstallmentSchedule::sync($rent);
 
         return redirect()->route('houses.rents.index', $house)
                         ->with('success', 'اجاره با موفقیت ویرایش شد.');
@@ -170,7 +177,7 @@ class HouseRentController extends Controller
         // آپلود تصویر
         if ($request->hasFile('receipt_image')) {
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $transactionData['receipt_image'] = 'uploads/receipts/' . $filename;
         }

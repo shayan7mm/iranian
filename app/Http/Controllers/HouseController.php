@@ -20,7 +20,7 @@ class HouseController extends Controller
         if (!$user->isMaster()) {
             $houseIds = $user->getHouseIds('houses');
             if (empty($houseIds)) {
-                return view('houses.index', ['houses' => collect([]), 'status' => $status, 'search' => $search]);
+                return view('houses.index', ['houses' => House::whereIn('id', [])->paginate(20), 'status' => $status, 'search' => $search]);
             }
             $query->whereIn('id', $houseIds);
         }
@@ -43,12 +43,14 @@ class HouseController extends Controller
     // ===== فرم ثبت منزل جدید =====
     public function create()
     {
+        $this->ensureModuleAccess();
         return view('houses.create');
     }
 
     // ===== ذخیره منزل جدید =====
     public function store(Request $request)
     {
+        $this->ensureModuleAccess();
         $request->validate([
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
@@ -135,6 +137,14 @@ class HouseController extends Controller
         $user = Auth::user();
         if (!$user->isMaster() && !$user->canAccessHouse($house->id)) {
             abort(403, 'شما دسترسی به این منزل را ندارید.');
+        }
+    }
+
+    // ===== بررسی دسترسی به ماژول (بدون دسترسی، امکان ثبت مورد جدید نیست) =====
+    private function ensureModuleAccess(): void
+    {
+        if (! Auth::user()->hasModuleAccess('houses')) {
+            abort(403, 'شما به این بخش دسترسی ندارید.');
         }
     }
 }

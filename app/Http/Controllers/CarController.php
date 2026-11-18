@@ -22,7 +22,7 @@ class CarController extends Controller
         if (!$user->isMaster()) {
             $carIds = $user->getCarIds('cars');
             if (empty($carIds)) {
-                return view('cars.index', ['cars' => collect([]), 'status' => $status, 'search' => $search]);
+                return view('cars.index', ['cars' => Car::whereIn('id', [])->paginate(20), 'status' => $status, 'search' => $search]);
             }
             $query->whereIn('id', $carIds);
         }
@@ -47,12 +47,14 @@ class CarController extends Controller
     // ===== فرم ثبت ماشین جدید =====
     public function create()
     {
+        $this->ensureModuleAccess();
         return view('cars.create');
     }
 
     // ===== ذخیره ماشین جدید =====
     public function store(Request $request)
     {
+        $this->ensureModuleAccess();
         $request->validate([
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
@@ -154,6 +156,14 @@ class CarController extends Controller
         $user = Auth::user();
         if (!$user->isMaster() && !$user->canAccessCar($car->id)) {
             abort(403, 'شما دسترسی به این ماشین را ندارید.');
+        }
+    }
+
+    // ===== بررسی دسترسی به ماژول (بدون دسترسی، امکان ثبت مورد جدید نیست) =====
+    private function ensureModuleAccess(): void
+    {
+        if (! Auth::user()->hasModuleAccess('cars')) {
+            abort(403, 'شما به این بخش دسترسی ندارید.');
         }
     }
 }

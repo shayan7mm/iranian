@@ -12,6 +12,7 @@ class ExpenseController extends Controller
     // ===== لیست هزینه‌ها =====
     public function index(Request $request)
     {
+        $this->ensureModuleAccess();
         $user = Auth::user();
         $search = $request->get('search');
         $type = $request->get('type');
@@ -44,12 +45,14 @@ class ExpenseController extends Controller
     // ===== فرم ثبت هزینه جدید =====
     public function create()
     {
+        $this->ensureModuleAccess();
         return view('expenses.create');
     }
 
     // ===== ذخیره هزینه جدید =====
     public function store(Request $request)
     {
+        $this->ensureModuleAccess();
         $request->validate([
             'title' => 'required|string|max:255',
             'type' => 'required|in:income,expense',
@@ -75,7 +78,7 @@ class ExpenseController extends Controller
 
         if ($request->hasFile('receipt_image')) {
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $data['receipt_image'] = 'uploads/receipts/' . $filename;
         }
@@ -90,6 +93,7 @@ class ExpenseController extends Controller
     // ===== فرم ویرایش هزینه =====
     public function edit(Expense $expense)
     {
+        $this->ensureModuleAccess();
         $this->checkAccess($expense);
         return view('expenses.edit', compact('expense'));
     }
@@ -97,6 +101,7 @@ class ExpenseController extends Controller
     // ===== به‌روزرسانی هزینه =====
     public function update(Request $request, Expense $expense)
     {
+        $this->ensureModuleAccess();
         $this->checkAccess($expense);
 
         $request->validate([
@@ -126,7 +131,7 @@ class ExpenseController extends Controller
             }
             
             $file = $request->file('receipt_image');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = $file->hashName();
             $file->move(public_path('uploads/receipts'), $filename);
             $data['receipt_image'] = 'uploads/receipts/' . $filename;
         }
@@ -140,6 +145,7 @@ class ExpenseController extends Controller
     // ===== حذف هزینه =====
     public function destroy(Expense $expense)
     {
+        $this->ensureModuleAccess();
         $this->checkAccess($expense);
 
         if ($expense->receipt_image && file_exists(public_path($expense->receipt_image))) {
@@ -158,6 +164,14 @@ class ExpenseController extends Controller
         $user = Auth::user();
         if (!$user->isMaster() && $expense->user_id !== $user->id) {
             abort(403, 'شما دسترسی به این آیتم را ندارید.');
+        }
+    }
+
+    // ===== بررسی دسترسی به ماژول (بدون دسترسی، امکان ثبت مورد جدید نیست) =====
+    private function ensureModuleAccess(): void
+    {
+        if (! Auth::user()->hasModuleAccess('expenses')) {
+            abort(403, 'شما به این بخش دسترسی ندارید.');
         }
     }
 }

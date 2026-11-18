@@ -19,6 +19,12 @@ class User extends Authenticatable
         'is_active',
     ];
 
+    // مقادیر پیش‌فرض هم‌راستا با دیتابیس (تا کاربر تازه‌ساخته پیش از بارگذاری مجدد، فعال شناخته شود)
+    protected $attributes = [
+        'role' => 'accountant',
+        'is_active' => true,
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',

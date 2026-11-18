@@ -21,8 +21,9 @@ class AuthenticationTest extends TestCase
     {
         $user = User::factory()->create();
 
+        // فرم ورود این پروژه فیلد login (ایمیل یا موبایل) دارد
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
         ]);
 
